@@ -199,6 +199,39 @@ for d in "$SCRIPT_DIR"/skills/*/; do
   fi
 done
 
+# ── Register startup hook in ~/.claude/settings.json ────────
+SETTINGS_FILE="$HOME/.claude/settings.json"
+HOOK_CMD="bash ~/Documents/claude-setup/check-skills.sh"
+
+if [ -f "$SETTINGS_FILE" ]; then
+  if ! grep -q "check-skills.sh" "$SETTINGS_FILE"; then
+    # Insert hooks block after opening brace using python (available on macOS/Linux)
+    python3 - <<PYEOF
+import json, sys
+
+with open("$SETTINGS_FILE", "r") as f:
+    data = json.load(f)
+
+data.setdefault("hooks", {}).setdefault("SessionStart", [])
+hook_entry = {"matcher": "", "hooks": [{"type": "command", "command": "$HOOK_CMD"}]}
+
+# avoid duplicates
+existing = [h for block in data["hooks"]["SessionStart"] for h in block.get("hooks", []) if h.get("command") == "$HOOK_CMD"]
+if not existing:
+    data["hooks"]["SessionStart"].append(hook_entry)
+
+with open("$SETTINGS_FILE", "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+print("Startup hook registered in settings.json")
+PYEOF
+  else
+    log "Startup hook already registered"
+  fi
+else
+  warn "~/.claude/settings.json not found — create it first by opening Claude Code, then re-run this script"
+fi
+
 # ── Write sentinel ───────────────────────────────────────────
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SENTINEL"
 
