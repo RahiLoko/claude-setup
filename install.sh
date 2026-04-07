@@ -232,6 +232,15 @@ else
   warn "~/.claude/settings.json not found — create it first by opening Claude Code, then re-run this script"
 fi
 
+# ── Install global CLAUDE.md (model selection rules) ────────
+CLAUDE_MD="$HOME/.claude/CLAUDE.md"
+if [ -f "$SCRIPT_DIR/MODELS.md" ]; then
+  cp "$SCRIPT_DIR/MODELS.md" "$CLAUDE_MD"
+  log "Model selection rules → ~/.claude/CLAUDE.md"
+else
+  warn "MODELS.md not found — skipping global CLAUDE.md install"
+fi
+
 # ── Write sentinel ───────────────────────────────────────────
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SENTINEL"
 

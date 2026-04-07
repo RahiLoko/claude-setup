@@ -51,6 +51,12 @@ git push
 
 The install script automatically copies everything in `skills/` to `~/.claude/skills/`.
 
+## Model selection
+
+See [`MODELS.md`](MODELS.md) for the full model selection guide (Haiku / Sonnet / Opus).
+
+The install script copies `MODELS.md` to `~/.claude/CLAUDE.md` so these rules are loaded globally in every Claude Code session.
+
 ## Updating skills
 
 ```bash
