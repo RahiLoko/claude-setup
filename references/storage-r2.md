@@ -14,6 +14,14 @@
 - `R2_BUCKET` — bucket name
 - `R2_PUBLIC_URL` — public bucket/custom-domain base URL, if the bucket is public
 
+## DB backups to R2 (add once the project is live, not at scaffold)
+
+- brickbox-new pattern: a compose sidecar (`alpine` + AWS CLI) runs daily
+  `pg_dump | gzip` → `s3://<name>-backups/postgres/$(date +%F).sql.gz` against
+  the R2 S3 endpoint, keeping the last 30. Use a **separate bucket** for
+  backups (`R2_BUCKET_BACKUPS`) so asset-bucket credentials can stay
+  narrower.
+
 ## Out of scope for the skill run
 
 - Bucket creation, CORS rules on the bucket, and the API token are manual

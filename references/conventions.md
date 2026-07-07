@@ -40,6 +40,11 @@ Create `CLAUDE.md` at repo root with exactly these sections, filled in:
 - Every new env var goes into `.env.example` in the same commit that introduces it.
 ```
 
+## Cross-cutting rules (from ybn40's governance doc — the best of the family)
+
+- **Estonian characters must round-trip**: any new parser, importer, or writer gets a UTF-8 spot-check with `õ ä ö ü` before it's considered done.
+- **Docs move with changes**: update the nearest CLAUDE.md/README in the same commit that changes the behavior it describes. No volatile status assertions in docs — point at the source of truth instead.
+
 ## Commit style
 
 Conventional commits (`feat(scope): …`, `fix: …`, `docs: …`). First commit

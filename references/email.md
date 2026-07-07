@@ -4,7 +4,8 @@
 
 - Call Brevo's transactional API (`https://api.brevo.com/v3/smtp/email`) via plain `fetch` from one helper in `src/lib/email.ts` — the official SDK is heavyweight and unnecessary for send-only use.
 - Helper exposes intent-named functions (`sendVerificationEmail`, `sendPasswordResetEmail`), not a generic `sendEmail` free-for-all.
-- Wire into Better Auth's email hooks: email verification + password reset if chosen together with the auth baseline.
+- Wire into Better Auth's email hooks: email verification (`sendOnSignUp: true`, 24 h expiry) + password reset — this exact wiring is live in brickbox-new (`src/lib/email.ts` ← auth hooks).
+- Payload shape (confirmed in production): `{ sender: { email, name }, to: [{ email, name }], subject, htmlContent }` with the `api-key` header.
 - Dev behavior: when `BREVO_API_KEY` is unset, log the email payload to console instead of sending — signup must work locally without a key.
 
 ## Env vars (add to .env.example with comments)

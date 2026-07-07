@@ -50,7 +50,7 @@ project CLAUDE.md template, scripts, commit style, .env.example discipline).
 ### 3. Verify — all must pass, in this order
 
 1. Local Postgres up (`docker compose -f docker-compose.dev.yml up -d`), then migrations and seed apply cleanly.
-2. `pnpm dev` boots and the home page returns HTTP 200.
+2. `pnpm dev` boots; the home page and `/api/health` both return HTTP 200.
 3. **Auth round-trip actually performed**: sign up a scratch user and log in with it (curl against the Better Auth endpoints, or Playwright if e2e is set up). Delete or ignore the scratch user afterward.
 4. `pnpm lint` passes.
 5. `pnpm build` passes.
