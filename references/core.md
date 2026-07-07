@@ -3,6 +3,12 @@
 Write everything fresh with current stable versions. These are the locked
 decisions and known pitfalls — not code to copy.
 
+## Step 0: machine prerequisites (check before intake)
+
+- `pnpm` on PATH (if missing: `npm install -g pnpm` — corepack needs admin on Windows).
+- Docker daemon running (`docker version`) — required for the DB verification steps. If absent, tell the user up front that DB checks will be skipped and listed as pending.
+- `gh auth status` OK — required for repo creation.
+
 ## Locked decisions
 
 - Package manager: **pnpm**.
@@ -30,6 +36,13 @@ decisions and known pitfalls — not code to copy.
 9. Dev scripts: `dev.sh` and `dev.ps1` pair — both: start dev DB container, run migrations, start `pnpm dev`.
 10. `docs/` skeleton + project `CLAUDE.md` per conventions.md.
 11. CI: `.github/workflows/ci.yml` — on push/PR: pnpm install (with cache), `pnpm lint`, `pnpm build`. Nothing else (no deploy, no test matrix) until the project earns it.
+
+## Known gotchas (validated in the 2026-07 e2e run)
+
+- **pnpm ≥10 blocks dependency build scripts**, which aborts `create-next-app`'s install. Fix: write `pnpm-workspace.yaml` with `allowBuilds:` entries set to `true` for `sharp`, `unrs-resolver`, `@parcel/watcher`, `@swc/core`, `esbuild`, then `pnpm install`. The `pnpm` field in package.json is **no longer read** — the workspace yaml is the only place.
+- **shadcn CLI non-interactive init**: `pnpm dlx shadcn@latest init -y -b base -p nova`. `-b` picks the component base (`base` = Base UI, our default; `radix` the alternative); without `-p <preset>` it prompts for a theme even with `-y` (presets: nova, vega, maia, lyra, mira, luma, sera, rhea).
+- **Better Auth schema generation is chicken-and-egg**: the CLI loads your auth config, which imports the db, which imports the schema it's generating. Fix: temp generation-only config with `drizzleAdapter({} as never, { provider: "pg" })`, `mkdir db` first (the CLI won't create the output dir), then `pnpm dlx @better-auth/cli@latest generate --config auth-gen.config.ts --output db/schema.ts -y`; delete the temp config after.
+- **Env loading**: `drizzle.config.ts` loads dotenv with `{ path: [".env.local", ".env"] }`; seed scripts run via `tsx --env-file-if-exists=.env --env-file-if-exists=.env.local` so they work locally and in containers without either file.
 
 ## Known gotchas (from brickbox / taevakera / ybn / 3dlab)
 

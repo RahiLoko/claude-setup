@@ -19,6 +19,12 @@ old projects, but follow the decisions and gotchas in `references/`.
 
 ## Flow
 
+### 0. Prerequisites
+
+Check machine prerequisites per `references/core.md` §Step 0 (pnpm, Docker
+daemon, `gh auth`). Surface anything missing **before** intake so the user
+knows which verification steps will be skipped.
+
 ### 1. Intake — one AskUserQuestion round
 
 Ask in a single round:
