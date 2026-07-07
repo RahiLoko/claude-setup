@@ -1,7 +1,7 @@
 ---
 name: resume
-description: Session start briefing. Reads the implementation plan, memory, and git log to give a clear "here's where we are and what's next" summary. Use at the start of every work session.
-version: 1.0.0
+description: Session start briefing. Reads RESUME.md, the implementation plan, memory, and git state to give a clear "here's where we are and what's next" summary. Use at the start of every work session.
+version: 2.0.0
 activation_triggers:
   - "/resume"
   - "where were we"
@@ -12,55 +12,65 @@ activation_triggers:
 
 # Resume — Session Start Briefing
 
-When invoked, give a structured session briefing. Do this in order:
+When invoked, build a structured briefing for the current project. Work
+generically — never assume a specific project; pull every fact from the
+repo you are standing in.
 
-## Step 1: Read the plan
+## Step 1: Read RESUME.md (if present)
 
-Find and read the implementation plan. Look for it at:
-- `_docs/plans/*.md`
-- `docs/plan*.md`
-- `PLAN.md`
+`docs/RESUME.md` is the authoritative session-context file when it exists.
+Extract: current phase, done vs pending, locked decisions, "what to do
+next". If absent, skip — don't ask about it.
 
-Extract:
-- Total task count
-- Which tasks are marked `[x]` (done) vs `[ ]` (not done)
-- The **next incomplete task** — its number, name, and first few steps
+## Step 2: Read the active plan
 
-## Step 2: Read memory
+Plans live at `docs/superpowers/plans/*.md` (current convention). Legacy
+fallbacks, in order: `_docs/plans/*.md`, `docs/plan*.md`, `PLAN.md`.
+Use the most recently modified plan with incomplete `- [ ]` checkboxes.
 
-Read `MEMORY.md` from the project memory directory. Pull out:
-- Any "next session" notes
-- Active project decisions
-- Known blockers
+Extract: total task count, done vs open, and the **next incomplete task**
+(number, name, first steps).
 
-## Step 3: Check git
+## Step 3: Use memory
 
-Run `git log --oneline -5` to show the last 5 commits.
+The project memory index (MEMORY.md) is auto-loaded into context. Use it
+directly; open a linked memory file only if it clearly concerns this
+project. Pull out "next session" notes, active decisions, known blockers.
 
-## Step 4: Output the briefing
+## Step 4: Check git state
 
-Format it exactly like this — keep it short and scannable:
+- `git log --oneline -5`
+- `git status --porcelain` — flag uncommitted changes; they're usually
+  interrupted work
+- Current branch — flag if it's not the default branch (unfinished feature)
+- If a remote exists: `gh pr list --state open` — open PRs are usually
+  waiting on the merge gate
+
+## Step 5: Output the briefing
+
+Keep it short and scannable, ≤ 25 lines:
 
 ---
 
-**Session Briefing**
+**Session Briefing — <project folder name>**
+
+**Branch:** `<branch>`<, N uncommitted changes / open PR #X if any>
 
 **Last commits:**
-- `abc1234` fix: resolve mobile nav issue
-- `def5678` feat: add portfolio page
+- `abc1234` <subject>
+- `def5678` <subject>
 
 **Plan progress:** X of Y tasks done
 
 **Next task: [Task N — Name]**
-> [One sentence summary of what this task does]
+> One sentence on what it does.
 
 Steps to start:
-1. [First concrete step]
-2. [Second step]
-3. ...
+1. <first concrete step>
+2. <second step>
 
-**From last session:**
-> [Any notes from memory about what was in progress or what to watch out for]
+**From last session / memory:**
+> <in-progress notes, blockers, decisions to respect>
 
 **Ready.** Say "let's go" or ask about any task to begin.
 
@@ -68,8 +78,13 @@ Steps to start:
 
 ## Rules
 
-- Never summarize completed tasks in detail — just the count
-- Always show the NEXT task, not the last completed one
-- If the plan has no incomplete tasks → say "All tasks complete. What are we building next?"
-- If no plan file found → say so clearly and ask where it is
-- Keep the whole briefing under 20 lines
+- Never summarize completed tasks in detail — just the count.
+- Always show the NEXT task, not the last completed one.
+- Uncommitted changes or an open PR lead the briefing — they represent
+  interrupted work and the human merge gate.
+- Locked decisions come from RESUME.md / CLAUDE.md / memory — never from
+  this skill file.
+- If the plan is fully complete → say "All tasks complete." and suggest
+  `superpowers:brainstorming` for what's next.
+- If nothing is found (no RESUME.md, no plan) → say so and give the
+  git-state briefing only.
