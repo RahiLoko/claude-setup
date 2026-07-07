@@ -26,20 +26,14 @@ Then restart Claude Code and run the `/plugin install` commands shown at the end
 | `design-auditor` | Ashutos1997/claude-design-auditor-skill | Scores UI against 18 design rules |
 | `owasp-security` | agamm/claude-code-owasp | OWASP Top 10:2025 security review |
 | `email-html-mjml` | framix-team/skill-email-html-mjml | Responsive HTML emails (requires `npm i -D mjml`) |
-| `3dlab-blog-writer` | **custom** | 3dlab.ee MDX blog writer — frontmatter, bilingual ET/EN, image linking |
 | `new-project` | **custom** | Bootstraps a verified new web project (Next.js + Drizzle/Postgres + Better Auth + Docker) |
 | `resume` | **custom** | Session-start briefing from RESUME.md, plan, memory, git log |
 
 ## Custom skills
 
-`skills/3dlab-blog-writer/` — Blog writer tuned for 3dlab.ee:
-- Knows exact MDX frontmatter schema
-- Bilingual fields (ET default, EN for Nordic posts)
-- Rahi's writing voice (no buzzwords, first-person, real examples)
-- Image placement in `/images/blog/{slug}/`
-- Tag vocabulary: BIM, ArchiCAD, ÜBN, IFC...
-
-**Usage:** Type `/3dlab-blog-writer`, paste your rough draft.
+> Project-specific skills live in their own repos, not here — e.g. the 3dlab
+> blog writer is at `3dlab-ee/.claude/skills/3dlab-blog-writer`. This repo
+> holds only skills that apply on any machine, in any project.
 
 `skills/new-project/` — Project bootstrapper (instructions-only, no frozen code):
 - One intake round (name, purpose, modules: i18n / R2 / AI / email), then autonomous
