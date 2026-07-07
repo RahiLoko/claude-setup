@@ -194,7 +194,9 @@ for d in "$SCRIPT_DIR"/skills/*/; do
   local_name=$(basename "$d")
   if [ -f "$d/SKILL.md" ]; then
     mkdir -p "$SKILLS_DIR/$local_name"
-    cp "$d/SKILL.md" "$SKILLS_DIR/$local_name/SKILL.md"
+    # Copy the whole skill directory — skills like new-project ship
+    # references/ and docs/ alongside SKILL.md
+    cp -R "$d". "$SKILLS_DIR/$local_name/"
     log "$local_name (custom)"
   fi
 done

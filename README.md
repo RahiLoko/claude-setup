@@ -27,6 +27,8 @@ Then restart Claude Code and run the `/plugin install` commands shown at the end
 | `owasp-security` | agamm/claude-code-owasp | OWASP Top 10:2025 security review |
 | `email-html-mjml` | framix-team/skill-email-html-mjml | Responsive HTML emails (requires `npm i -D mjml`) |
 | `3dlab-blog-writer` | **custom** | 3dlab.ee MDX blog writer — frontmatter, bilingual ET/EN, image linking |
+| `new-project` | **custom** | Bootstraps a verified new web project (Next.js + Drizzle/Postgres + Better Auth + Docker) |
+| `resume` | **custom** | Session-start briefing from RESUME.md, plan, memory, git log |
 
 ## Custom skills
 
@@ -38,6 +40,20 @@ Then restart Claude Code and run the `/plugin install` commands shown at the end
 - Tag vocabulary: BIM, ArchiCAD, ÜBN, IFC...
 
 **Usage:** Type `/3dlab-blog-writer`, paste your rough draft.
+
+`skills/new-project/` — Project bootstrapper (instructions-only, no frozen code):
+- One intake round (name, purpose, modules: i18n / R2 / AI / email), then autonomous
+- Fixed stack: Next.js + Tailwind/shadcn (Base UI), Drizzle + Postgres, Better Auth, Docker/Coolify
+- Verifies with evidence: dev server, migrate + seed, auth round-trip, lint, build — then creates the GitHub repo
+- `references/*.md` hold the accumulated gotchas from live projects; lessons from each new project go back into them
+- Design spec + plan live in `skills/new-project/docs/`
+
+**Usage:** Type `/new-project`.
+
+**Maintenance note:** on the main dev machine `~/.claude/skills/new-project` is a
+junction into this repo, so editing the live skill edits the repo — commit and
+push from here. Other machines get plain copies via `install.sh` and should not
+edit locally.
 
 ## Adding new custom skills
 
