@@ -28,8 +28,12 @@ Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-o
 | Model | ID | Best for |
 |-------|----|----------|
 | Haiku 4.5 | `claude-haiku-4-5-20251001` | Research, lookups, fast agents |
-| Sonnet 4.6 | `claude-sonnet-4-6` | Everyday coding, features, fixes |
-| Opus 4.6 | `claude-opus-4-6` | Security, planning, hard problems |
+| Sonnet 5 | `claude-sonnet-5` | Everyday coding, features, fixes |
+| Opus 4.8 | `claude-opus-4-8` | Security, planning, hard problems |
+
+The current frontier families are Claude 5 (`claude-sonnet-5`, `claude-fable-5`),
+Opus 4.8, and Haiku 4.5. When building anything against the Claude API, default
+to the latest and most capable model rather than pinning an old snapshot.
 
 ## Where This Is Enforced
 
@@ -37,12 +41,21 @@ Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-o
 - **Project CLAUDE.md** — reinforced per-project where relevant
 - This file is the source of truth for the rule set — update it here, then re-run `install.sh` to sync
 
-## Adding to a New Machine
+## How It Reaches `~/.claude/CLAUDE.md`
 
-The install script (`install.sh`) does not currently copy `MODELS.md` into `~/.claude/CLAUDE.md` automatically — that step is done manually. After cloning the repo on a new machine, run:
+`install.sh` syncs this file into a **managed block** in `~/.claude/CLAUDE.md`,
+delimited by a pair of HTML comments reading `BEGIN claude-setup:models` and
+`END claude-setup:models`. (The literal marker text is deliberately not repeated
+here — this file is pasted *inside* those markers, and a second copy of them in
+the body would confuse the sync.)
 
-```bash
-cp ~/Documents/claude-setup/MODELS.md ~/.claude/CLAUDE.md
-```
+Anything you write outside that block is yours and is never touched. Re-running
+`install.sh` rewrites only the block, so editing `MODELS.md` here and re-running
+is the correct way to update the rules everywhere.
 
-Or adapt `install.sh` to do it automatically.
+If `~/.claude/CLAUDE.md` does not exist yet (fresh machine), the installer
+creates it containing just the managed block. If it does exist, the installer
+takes a `CLAUDE.md.bak` snapshot before modifying it.
+
+> Do not `cp MODELS.md ~/.claude/CLAUDE.md`. That overwrites the whole file and
+> destroys any hand-written global instructions living alongside the block.

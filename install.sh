@@ -25,6 +25,31 @@ log()  { echo -e "${GREEN}✓${NC} $1"; }
 warn() { echo -e "${YELLOW}⚠${NC}  $1"; }
 err()  { echo -e "${RED}✗${NC} $1"; }
 
+# ── Install one skill directory ──────────────────────────────
+# Copies SKILL.md *and* the supporting dirs a skill ships. Skills
+# routinely reference reference/*.md and scripts/*; copying only
+# SKILL.md installs a skill whose own instructions point at files
+# that do not exist. Never copies .git.
+install_skill_dir() {
+  local src="$1" name="$2"
+  [ -f "$src/SKILL.md" ] || return 0
+
+  local dest="$SKILLS_DIR/$name"
+  rm -rf "${dest:?}"
+  mkdir -p "$dest"
+  cp "$src/SKILL.md" "$dest/SKILL.md"
+
+  local sub
+  for sub in reference references scripts docs assets templates; do
+    if [ -d "$src/$sub" ]; then
+      cp -R "$src/$sub" "$dest/$sub"
+    fi
+  done
+
+  echo "$name" >> "$MANIFEST_NEW"
+  log "$name"
+}
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Claude Code Skills Installer"
@@ -39,7 +64,14 @@ fi
 
 mkdir -p "$SKILLS_DIR"
 TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+# Names of every skill installed by this run. Compared against the
+# previous run's manifest so renamed/removed upstream skills get pruned
+# instead of lingering forever as stale duplicates.
+MANIFEST="$SKILLS_DIR/.manifest"
+MANIFEST_NEW="$TEMP_DIR/manifest.new"
+: > "$MANIFEST_NEW"
 
 # ── Helper: clone a repo and extract skills ─────────────────
 clone_extract() {
@@ -59,111 +91,66 @@ clone_extract() {
 
 # ── Extraction patterns ──────────────────────────────────────
 
-# Single SKILL.md at repo root → skill-name/SKILL.md
-extract_root() {
-  local src="$1" skill_name="$2"
-  if [ -f "$src/SKILL.md" ]; then
-    mkdir -p "$SKILLS_DIR/$skill_name"
-    cp "$src/SKILL.md" "$SKILLS_DIR/$skill_name/SKILL.md"
-    log "$skill_name"
-  fi
+# Single skill at repo root (design-auditor)
+extract_design_auditor() {
+  install_skill_dir "$1" "design-auditor"
 }
 
-# skills/*/SKILL.md → mkt-{name}/SKILL.md  (coreyhaines)
+# skills/*/SKILL.md → mkt-{name}  (coreyhaines)
 extract_coreyhaines() {
-  local src="$1"
-  for d in "$src"/skills/*/; do
-    local name=$(basename "$d")
-    if [ -f "$d/SKILL.md" ]; then
-      mkdir -p "$SKILLS_DIR/mkt-$name"
-      cp "$d/SKILL.md" "$SKILLS_DIR/mkt-$name/SKILL.md"
-      log "mkt-$name"
-    fi
+  local d
+  for d in "$1"/skills/*/; do
+    install_skill_dir "$d" "mkt-$(basename "$d")"
   done
 }
 
 # */SKILL.md at repo root (wondelai)
 extract_wondelai() {
-  local src="$1"
-  for d in "$src"/*/; do
-    local name=$(basename "$d")
-    if [ -f "$d/SKILL.md" ]; then
-      mkdir -p "$SKILLS_DIR/wondelai-$name"
-      cp "$d/SKILL.md" "$SKILLS_DIR/wondelai-$name/SKILL.md"
-      log "wondelai-$name"
-    fi
+  local d
+  for d in "$1"/*/; do
+    install_skill_dir "$d" "wondelai-$(basename "$d")"
   done
 }
 
 # skills/category/skill/SKILL.md (entrepreneur)
 extract_entrepreneur() {
-  local src="$1"
-  find "$src/skills" -name "SKILL.md" 2>/dev/null | while read f; do
-    local name=$(basename "$(dirname "$f")")
-    mkdir -p "$SKILLS_DIR/founder-$name"
-    cp "$f" "$SKILLS_DIR/founder-$name/SKILL.md"
-    log "founder-$name"
-  done
+  local f
+  while IFS= read -r f; do
+    local d; d="$(dirname "$f")"
+    install_skill_dir "$d" "founder-$(basename "$d")"
+  done < <(find "$1/skills" -name SKILL.md 2>/dev/null)
 }
 
-# .cursor/skills/*/SKILL.md (impeccable)
+# .cursor/skills/impeccable/ (impeccable)
+# Upstream consolidated the former ~18 sub-skills (polish, animate,
+# audit, …) into a single umbrella skill. Installing it as one dir
+# keeps SKILL.md next to its reference/ and scripts/.
 extract_impeccable() {
-  local src="$1"
-  for d in "$src"/.cursor/skills/*/; do
-    local name=$(basename "$d")
-    if [ -f "$d/SKILL.md" ]; then
-      mkdir -p "$SKILLS_DIR/impeccable-$name"
-      cp "$d/SKILL.md" "$SKILLS_DIR/impeccable-$name/SKILL.md"
-      log "impeccable-$name"
-    fi
-  done
+  install_skill_dir "$1/.cursor/skills/impeccable" "impeccable"
 }
 
-# skills/*/SKILL.md + nested path fix (openclaudia) — no-API skills only
+# skills/*/SKILL.md (openclaudia) — no-API skills only
 extract_openclaudia() {
-  local src="$1"
   local no_api_skills="seo-audit seo-content-brief keyword-research content-strategy content-calendar write-blog launch-strategy lead-magnet i18n copywriting page-cro signup-flow-cro cold-email"
+  local skill
   for skill in $no_api_skills; do
-    local f="$src/skills/$skill/SKILL.md"
-    if [ -f "$f" ]; then
-      mkdir -p "$SKILLS_DIR/oc-$skill"
-      cp "$f" "$SKILLS_DIR/oc-$skill/SKILL.md"
-      log "oc-$skill"
-    fi
+    install_skill_dir "$1/skills/$skill" "oc-$skill"
   done
 }
 
 # skills/emil-design-eng/SKILL.md (emilkowalski)
 extract_emilkowalski() {
-  local src="$1"
-  local f="$src/skills/emil-design-eng/SKILL.md"
-  if [ -f "$f" ]; then
-    mkdir -p "$SKILLS_DIR/emilkowalski-skill"
-    cp "$f" "$SKILLS_DIR/emilkowalski-skill/SKILL.md"
-    log "emilkowalski-skill"
-  fi
+  install_skill_dir "$1/skills/emil-design-eng" "emilkowalski-skill"
 }
 
 # .claude/skills/owasp-security/SKILL.md
 extract_owasp() {
-  local src="$1"
-  local f="$src/.claude/skills/owasp-security/SKILL.md"
-  if [ -f "$f" ]; then
-    mkdir -p "$SKILLS_DIR/owasp-security"
-    cp "$f" "$SKILLS_DIR/owasp-security/SKILL.md"
-    log "owasp-security"
-  fi
+  install_skill_dir "$1/.claude/skills/owasp-security" "owasp-security"
 }
 
 # email-html-mjml/SKILL.md
 extract_email_mjml() {
-  local src="$1"
-  local f="$src/email-html-mjml/SKILL.md"
-  if [ -f "$f" ]; then
-    mkdir -p "$SKILLS_DIR/email-html-mjml"
-    cp "$f" "$SKILLS_DIR/email-html-mjml/SKILL.md"
-    log "email-html-mjml"
-  fi
+  install_skill_dir "$1/email-html-mjml" "email-html-mjml"
 }
 
 # ── Install all skills ───────────────────────────────────────
@@ -171,7 +158,7 @@ extract_email_mjml() {
 echo "[ Design & UI ]"
 clone_extract "https://github.com/emilkowalski/skill"                 "emilkowalski"   extract_emilkowalski
 clone_extract "https://github.com/pbakaus/impeccable"                 "impeccable"     extract_impeccable
-clone_extract "https://github.com/Ashutos1997/claude-design-auditor-skill" "design-auditor" 'f() { extract_root "$1" "design-auditor"; }; f'
+clone_extract "https://github.com/Ashutos1997/claude-design-auditor-skill" "design-auditor" extract_design_auditor
 
 echo ""
 echo "[ Security ]"
@@ -191,57 +178,116 @@ clone_extract "https://github.com/framix-team/skill-email-html-mjml"  "email-mjm
 echo ""
 echo "[ Custom skills (from this repo) ]"
 for d in "$SCRIPT_DIR"/skills/*/; do
-  local_name=$(basename "$d")
-  if [ -f "$d/SKILL.md" ]; then
-    mkdir -p "$SKILLS_DIR/$local_name"
-    # Copy the whole skill directory — skills like new-project ship
-    # references/ and docs/ alongside SKILL.md
-    cp -R "$d". "$SKILLS_DIR/$local_name/"
-    log "$local_name (custom)"
-  fi
+  install_skill_dir "$d" "$(basename "$d")"
 done
 
 # ── Register startup hook in ~/.claude/settings.json ────────
 SETTINGS_FILE="$HOME/.claude/settings.json"
 HOOK_CMD="bash ~/Documents/claude-setup/check-skills.sh"
 
-if [ -f "$SETTINGS_FILE" ]; then
-  if ! grep -q "check-skills.sh" "$SETTINGS_FILE"; then
-    # Insert hooks block after opening brace using python (available on macOS/Linux)
-    python3 - <<PYEOF
+if ! command -v python3 &> /dev/null; then
+  warn "python3 not found — cannot register the startup hook automatically"
+elif [ -f "$SETTINGS_FILE" ]; then
+  # Paths go in as argv, not interpolated into the source: $HOME may
+  # contain spaces (and on Windows, backslashes).
+  cp "$SETTINGS_FILE" "$SETTINGS_FILE.bak"
+  python3 - "$SETTINGS_FILE" "$HOOK_CMD" <<'PYEOF'
 import json, sys
 
-with open("$SETTINGS_FILE", "r") as f:
+settings_file, hook_cmd = sys.argv[1:3]
+
+with open(settings_file, encoding="utf-8") as f:
     data = json.load(f)
 
-data.setdefault("hooks", {}).setdefault("SessionStart", [])
-hook_entry = {"matcher": "", "hooks": [{"type": "command", "command": "$HOOK_CMD"}]}
+session_start = data.setdefault("hooks", {}).setdefault("SessionStart", [])
 
-# avoid duplicates
-existing = [h for block in data["hooks"]["SessionStart"] for h in block.get("hooks", []) if h.get("command") == "$HOOK_CMD"]
-if not existing:
-    data["hooks"]["SessionStart"].append(hook_entry)
+already = any(
+    h.get("command") == hook_cmd
+    for block in session_start
+    for h in block.get("hooks", [])
+)
 
-with open("$SETTINGS_FILE", "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
-print("Startup hook registered in settings.json")
+if already:
+    print("  startup hook already registered")
+else:
+    session_start.append(
+        {"matcher": "", "hooks": [{"type": "command", "command": hook_cmd}]}
+    )
+    with open(settings_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    print("  startup hook registered in settings.json")
 PYEOF
-  else
-    log "Startup hook already registered"
-  fi
+  log "Startup hook checked (backup: settings.json.bak)"
 else
   warn "~/.claude/settings.json not found — create it first by opening Claude Code, then re-run this script"
 fi
 
-# ── Install global CLAUDE.md (model selection rules) ────────
+# ── Sync model rules into global CLAUDE.md ──────────────────
+# MODELS.md is synced into a managed block. Hand-written global
+# instructions outside the block are preserved. Never overwrite the
+# whole file — it is the user's global config, not ours.
 CLAUDE_MD="$HOME/.claude/CLAUDE.md"
-if [ -f "$SCRIPT_DIR/MODELS.md" ]; then
-  cp "$SCRIPT_DIR/MODELS.md" "$CLAUDE_MD"
-  log "Model selection rules → ~/.claude/CLAUDE.md"
+BEGIN_MARK="<!-- BEGIN claude-setup:models -->"
+END_MARK="<!-- END claude-setup:models -->"
+
+if [ ! -f "$SCRIPT_DIR/MODELS.md" ]; then
+  warn "MODELS.md not found — skipping global CLAUDE.md sync"
+elif [ ! -f "$CLAUDE_MD" ]; then
+  { echo "$BEGIN_MARK"; cat "$SCRIPT_DIR/MODELS.md"; echo "$END_MARK"; } > "$CLAUDE_MD"
+  log "Created ~/.claude/CLAUDE.md with model selection rules"
 else
-  warn "MODELS.md not found — skipping global CLAUDE.md install"
+  cp "$CLAUDE_MD" "$CLAUDE_MD.bak"
+  python3 - "$CLAUDE_MD" "$SCRIPT_DIR/MODELS.md" "$BEGIN_MARK" "$END_MARK" <<'PYEOF'
+import re, sys
+
+claude_md, models_md, begin, end = sys.argv[1:5]
+
+with open(models_md, encoding="utf-8") as f:
+    block = begin + "\n" + f.read().strip() + "\n" + end
+
+with open(claude_md, encoding="utf-8") as f:
+    current = f.read()
+
+# Greedy: the block runs from the FIRST begin marker to the LAST end
+# marker. Non-greedy would stop at any marker quoted inside the block
+# (e.g. documentation showing the marker syntax) and orphan the tail.
+pattern = re.compile(re.escape(begin) + ".*" + re.escape(end), re.S)
+if pattern.search(current):
+    # Use a lambda so backslashes / \g in the block are not read as escapes.
+    updated = pattern.sub(lambda _: block, current)
+else:
+    updated = current.rstrip() + "\n\n" + block + "\n"
+
+if updated != current:
+    with open(claude_md, "w", encoding="utf-8") as f:
+        f.write(updated)
+    print("  model rules block updated")
+else:
+    print("  model rules block already current")
+PYEOF
+  log "Model rules synced into ~/.claude/CLAUDE.md (backup: CLAUDE.md.bak)"
 fi
+
+# ── Prune skills upstream no longer provides ─────────────────
+# Only removes names that a PREVIOUS run of this script recorded in
+# .manifest and that this run did not reinstall — i.e. renamed or
+# dropped upstream. Skills installed by any other means are never
+# in the manifest, so they are never touched.
+sort -u -o "$MANIFEST_NEW" "$MANIFEST_NEW"
+
+if [ -f "$MANIFEST" ]; then
+  while IFS= read -r old_name; do
+    [ -n "$old_name" ] || continue
+    if ! grep -qxF "$old_name" "$MANIFEST_NEW"; then
+      rm -rf "${SKILLS_DIR:?}/$old_name"
+      warn "pruned $old_name (renamed or dropped upstream)"
+    fi
+  done < "$MANIFEST"
+fi
+
+cp "$MANIFEST_NEW" "$MANIFEST"
+log "$(wc -l < "$MANIFEST" | tr -d ' ') skills tracked in .manifest"
 
 # ── Write sentinel ───────────────────────────────────────────
 date -u +"%Y-%m-%dT%H:%M:%SZ" > "$SENTINEL"

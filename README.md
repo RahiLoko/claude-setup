@@ -17,17 +17,21 @@ Then restart Claude Code and run the `/plugin install` commands shown at the end
 
 | Prefix | Source | Skills |
 |--------|--------|--------|
-| `mkt-` | coreyhaines31/marketingskills | cold-email, page-cro, copywriting, launch-strategy, lead-magnets, seo-audit, + 29 more |
-| `wondelai-` | wondelai/skills | hundred-million-offers (Hormozi), influence-psychology (Cialdini), storybrand, + 35 more |
+| `mkt-` | coreyhaines31/marketingskills | cold-email, cro, copywriting, launch, lead-magnets, seo-audit, + 40 more |
+| `wondelai-` | wondelai/skills | hundred-million-offers (Hormozi), influence-psychology (Cialdini), storybrand, + 40 more |
 | `founder-` | mfwarren/entrepreneur-claude-skills | cold-outreach, offer-creation, pricing-strategy, + 21 more |
 | `oc-` | OpenClaudia/openclaudia-skills | seo-audit, write-blog, i18n, keyword-research, + 9 more |
-| `impeccable-` | pbakaus/impeccable | polish, animate, audit, colorize, critique, typeset, + 15 more |
+| `impeccable` | pbakaus/impeccable | One umbrella design skill (shape, critique, polish, animate, …) + `reference/` + `scripts/` |
 | `emilkowalski-skill` | emilkowalski/skill | Web animation + design engineering patterns |
-| `design-auditor` | Ashutos1997/claude-design-auditor-skill | Scores UI against 18 design rules |
+| `design-auditor` | Ashutos1997/claude-design-auditor-skill | Scores UI against 19 design rules |
 | `owasp-security` | agamm/claude-code-owasp | OWASP Top 10:2025 security review |
 | `email-html-mjml` | framix-team/skill-email-html-mjml | Responsive HTML emails (requires `npm i -D mjml`) |
 | `new-project` | **custom** | Bootstraps a verified new web project (Next.js + Drizzle/Postgres + Better Auth + Docker) |
 | `resume` | **custom** | Session-start briefing from RESUME.md, plan, memory, git log |
+
+Skills ship supporting files (`reference/`, `scripts/`, `docs/`), and the installer
+copies those alongside `SKILL.md` — a skill installed as a lone `SKILL.md` is a
+skill whose own instructions point at files that don't exist.
 
 ## Custom skills
 
@@ -71,5 +75,26 @@ The install script copies `MODELS.md` to `~/.claude/CLAUDE.md` so these rules ar
 
 ```bash
 cd ~/Documents/claude-setup
-./install.sh   # re-runs everything, overwrites existing
+./install.sh   # re-runs everything; safe to run repeatedly
 ```
+
+`install.sh` is idempotent. Running it twice in a row leaves `~/.claude/CLAUDE.md`
+and `~/.claude/settings.json` byte-for-byte identical.
+
+## What install.sh touches
+
+| Path | Behaviour |
+|------|-----------|
+| `~/.claude/skills/<name>/` | Overwritten for every skill it manages |
+| `~/.claude/skills/.manifest` | List of skills this script installed |
+| `~/.claude/CLAUDE.md` | **Managed block only** — see `MODELS.md`. Backed up to `CLAUDE.md.bak` |
+| `~/.claude/settings.json` | Adds the SessionStart hook if absent. Backed up to `settings.json.bak` |
+
+**Pruning.** When an upstream repo renames a skill (`mkt-page-cro` → `mkt-cro`),
+the old directory is removed on the next run — but *only* if `.manifest` records
+that this script installed it. Skills you added by other means are never in the
+manifest, so they are never touched.
+
+**Your global instructions are safe.** The installer never overwrites
+`~/.claude/CLAUDE.md` wholesale; it syncs `MODELS.md` into a delimited block and
+leaves everything else alone.
