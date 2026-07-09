@@ -183,16 +183,28 @@ done
 
 # ── Register startup hook in ~/.claude/settings.json ────────
 SETTINGS_FILE="$HOME/.claude/settings.json"
-HOOK_CMD="bash ~/Documents/claude-setup/check-skills.sh"
+HOOK_SCRIPT="~/Documents/claude-setup/check-skills.sh"
+
+# On Windows, `bash` on PATH is C:\Windows\system32\bash.exe — the WSL
+# launcher, not Git Bash — and cmd.exe never expands `~`. Point at the
+# real Git Bash by absolute path and let `bash -c` expand the tilde.
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    GIT_BASH="$(cygpath -w "$(command -v bash)")"
+    HOOK_CMD="\"$GIT_BASH\" -c \"$HOOK_SCRIPT\""
+    ;;
+  *)
+    HOOK_CMD="bash $HOOK_SCRIPT"
+    ;;
+esac
 
 if ! command -v python3 &> /dev/null; then
   warn "python3 not found — cannot register the startup hook automatically"
 elif [ -f "$SETTINGS_FILE" ]; then
   # Paths go in as argv, not interpolated into the source: $HOME may
   # contain spaces (and on Windows, backslashes).
-  cp "$SETTINGS_FILE" "$SETTINGS_FILE.bak"
   python3 - "$SETTINGS_FILE" "$HOOK_CMD" <<'PYEOF'
-import json, sys
+import json, shutil, sys
 
 settings_file, hook_cmd = sys.argv[1:3]
 
@@ -201,24 +213,32 @@ with open(settings_file, encoding="utf-8") as f:
 
 session_start = data.setdefault("hooks", {}).setdefault("SessionStart", [])
 
-already = any(
-    h.get("command") == hook_cmd
-    for block in session_start
-    for h in block.get("hooks", [])
+def ours(hook):
+    return "check-skills.sh" in str(hook.get("command", ""))
+
+existing = [h for b in session_start for h in b.get("hooks", []) if ours(h)]
+
+if len(existing) == 1 and existing[0].get("command") == hook_cmd:
+    print("  startup hook already registered")
+    sys.exit(0)
+
+# Drop every prior check-skills entry (an earlier version of this script
+# may have registered a command that does not work on this platform),
+# then re-add exactly one.
+for block in session_start:
+    block["hooks"] = [h for h in block.get("hooks", []) if not ours(h)]
+session_start[:] = [b for b in session_start if b.get("hooks")]
+session_start.append(
+    {"matcher": "", "hooks": [{"type": "command", "command": hook_cmd}]}
 )
 
-if already:
-    print("  startup hook already registered")
-else:
-    session_start.append(
-        {"matcher": "", "hooks": [{"type": "command", "command": hook_cmd}]}
-    )
-    with open(settings_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
-        f.write("\n")
-    print("  startup hook registered in settings.json")
+shutil.copyfile(settings_file, settings_file + ".bak")
+with open(settings_file, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+print("  startup hook registered (backup: settings.json.bak)")
 PYEOF
-  log "Startup hook checked (backup: settings.json.bak)"
+  log "Startup hook checked"
 else
   warn "~/.claude/settings.json not found — create it first by opening Claude Code, then re-run this script"
 fi
@@ -237,9 +257,8 @@ elif [ ! -f "$CLAUDE_MD" ]; then
   { echo "$BEGIN_MARK"; cat "$SCRIPT_DIR/MODELS.md"; echo "$END_MARK"; } > "$CLAUDE_MD"
   log "Created ~/.claude/CLAUDE.md with model selection rules"
 else
-  cp "$CLAUDE_MD" "$CLAUDE_MD.bak"
   python3 - "$CLAUDE_MD" "$SCRIPT_DIR/MODELS.md" "$BEGIN_MARK" "$END_MARK" <<'PYEOF'
-import re, sys
+import re, shutil, sys
 
 claude_md, models_md, begin, end = sys.argv[1:5]
 
@@ -260,13 +279,17 @@ else:
     updated = current.rstrip() + "\n\n" + block + "\n"
 
 if updated != current:
+    # Back up only when about to change the file. Backing up on every
+    # run would overwrite the pristine pre-install snapshot with an
+    # already-modified copy on the second run.
+    shutil.copyfile(claude_md, claude_md + ".bak")
     with open(claude_md, "w", encoding="utf-8") as f:
         f.write(updated)
-    print("  model rules block updated")
+    print("  model rules block updated (backup: CLAUDE.md.bak)")
 else:
     print("  model rules block already current")
 PYEOF
-  log "Model rules synced into ~/.claude/CLAUDE.md (backup: CLAUDE.md.bak)"
+  log "Model rules synced into ~/.claude/CLAUDE.md"
 fi
 
 # ── Prune skills upstream no longer provides ─────────────────
