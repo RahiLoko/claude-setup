@@ -1,0 +1,94 @@
+{
+  "skill_name": "koordinaator",
+  "evals": [
+    {
+      "id": 0,
+      "name": "idee-tyhi-projekt",
+      "prompt": "Panin IDEE.md kausta. Vaata see üle ja ütle, mis me tegema peame. (Käik 2, pärast vastust: „Sobib sinu soovitus. Tee ära, otsused tee ise. Repo panen GitHubi homme.\")",
+      "expected_output": "Käik 1: otsuseleht vestlusse (≤300 sõna) — mis see on, variandid hinnaga, soovitus, tehniline valik, esimene PR, kuni 3 küsimust; ühtegi koodifaili ei looda. Käik 2: protokoll aste 1 (docs/koordinatsioon/SEIS.md), CLAUDE.md, sessiooni prompt (PIIRID, TÕESTUS, PROTSESS); ideefail muutmata; vastus ≤200 sõna.",
+      "files": [
+        "IDEE.md"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "viga-olemasolev-projekt",
+      "prompt": "Täna hommikul kell 7 näitas skript Pärnu mnt arvet üle tähtaja, aga tähtaeg on alles täna. Paranda ära.",
+      "expected_output": "Mõõdab enne parandamist (reprodutseerib vea numbriga/testiga), parandab väikese asja ise koos testiga, mis enne kukub; vastus ≤200 sõna; protokollifailid paigaldatud (olemasolev projekt); commiti sõnumis ei ole mudeli nime. Parandus on harul (PR), mitte otse main-is; protokoll aste 1 (SEIS.md).",
+      "files": [
+        "src/index.mjs",
+        "test/overdue.test.mjs",
+        "invoices.json"
+      ],
+      "assertions": [
+        "Viga mõõdeti enne parandamist (käsk ja number/väljund on kirjas)",
+        "Vastus ütleb põhjuse (UTC kesköö / ajavöönd)",
+        "Lisati või muudeti test, mis katab tähtpäeva serva",
+        "Tähtpäev kell 07 Tallinna aja järgi EI OLE enam üle tähtaja (mõnel harul overdue annab tühja)",
+        "npm test läbib parandatud harul",
+        "Vastus Rahile on kuni 200 sõna",
+        "Commiti sõnumites ei ole mudeli nime (v.a Co-Authored-By trailer)",
+        "Protokoll paigaldati (docs/koordinatsioon/ olemas)",
+        "Väikesel projektil on protokolli ASTE 1 (ainult SEIS.md, mitte kolm faili)",
+        "Parandus on harul, mitte otse main-is (main-i src/test muutmata enne Rahi „jah"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "too-jagamine-mudelid",
+      "prompt": "TEHA.md-s on viis asja. Jaga ära: mis mudeliga, mis järjekorras, mis paralleelselt, ja kirjuta sessioonidele ülesanded. Ise ära kodeeri.",
+      "expected_output": "Igale viiele asjale mudel (Haiku/Sonnet/Opus/Fable) põhjendusega: andmebaasi otsus → Fable; grep-loend → Haiku/Sonnet alamagent; ümbernimetamine → Sonnet; CSV import ja HTML-aruanne → Opus; järjekord ja paralleelsus; sessioonide promptid PIIRID/TÕESTUS/PROTSESS osadega; koodi ei kirjutata; vastus ≤250 sõna.",
+      "files": [
+        "TEHA.md"
+      ],
+      "assertions": [
+        "Andmebaasi otsus (1): Fable VÕI koordinaator otsustas ise põhjendusega, mitte Sonnet/Haiku töösessioon",
+        "`sum` kohtade loend (2): Haiku/Sonnet alamagent VÕI koordinaator tegi ise ja loend on kirjas",
+        "Ümbernimetamine (3): Sonnet VÕI koordinaator ise (mitte Opus)",
+        "CSV import (4) ja HTML-aruanne (5) lähevad Opusele (funktsioonid, mitte mehaanika)",
+        "Rakenduse koodi ei kirjutatud (src/ ja package.json muutmata)",
+        "Vastus on kuni 250 sõna",
+        "Sessioonide ülesanded sisaldavad piire, tõestusnõudeid ja keeldu ise liita",
+        "Järjekord ja paralleelsus on vastuses välja öeldud",
+        "Kohalik režiim tuvastatud: sessioonid on Agent-alamagendid `isolation: worktree`-ga, mitte create_session"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "kohalik-reziim-too-jagamine",
+      "prompt": "(Keskkond: Claude Code Desktop, tööriistad Bash/Read/Edit/Write/Agent/gh; EI OLE create_session/get_session/send_later. Repo GitHubis.) TEHA.md-s on kolm asja. Jaga ära ja pane töö käima. Ise ära kodeeri.",
+      "expected_output": "Tuvastab kohaliku režiimi ise (ei küsi Rahilt); paigaldab protokolli ASTME 1 (üks SEIS.md); HTML-aruande ja CSV-impordi käivitab KOHE ja PARALLEELSELT Agent-alamagentidena `isolation: \"worktree\"` ja `model: \"opus\"`-ga, igaüks harult main-ist (mitte üksteise peale), kumbki oma uues moodulis; ümbernimetamise jätab viimaseks (või teeb ise harul); PR avab koordinaator gh-ga; kontrollib tulemused ise; vastus ≤200 sõna; mudeli nime commitis ei ole; otse main-i ei commiti.",
+      "files": [
+        "TEHA.md",
+        "src/index.mjs",
+        "test/overdue.test.mjs",
+        "invoices.json",
+        "package.json"
+      ],
+      "assertions": [
+        "Protokolli ASTE 1 (ainult SEIS.md) — väike projekt, mitte kolm faili",
+        "Alamagendid töötasid oma worktree's (isolation: worktree või git worktree add)",
+        "HTML-aruanne ja CSV-import anti Opusele (mitte Sonnetile)",
+        "Harud ei ole üksteise peale ehitatud (ükski funktsiooniharu ei sisalda teise haru tippu)",
+        "Sõltumatud alamagendid käivitati paralleelselt (run_in_background / paralleel sammudes)",
+        "npm test läbib igal funktsiooniharul",
+        "Genereeritud väljund (report.html) ei ole reposse commititud",
+        "Vastus Rahile on kuni 200 sõna",
+        "Commiti sõnumites ei ole mudeli nime",
+        "Režiimi ei küsitud Rahilt, koordinaator valis ise",
+        "PR-i avamine gh-ga on plaanis/tehtud (sammudes `gh pr create`)"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "olemasolev-suur-projekt-sessiooni-algus",
+      "prompt": "(Fixture: olemasolev repo, kus docs/koordinatsioon/ on astmes 2, LAHTISED-is on 2 B-rida, mille PR-id on juba main-is, ja 1 avatud PR.) Tere, jätkame. Mis seis on?",
+      "expected_output": "Loeb protokolli ja git logi enne rääkimist; kriipsutab läbi kaks tehtud B-rida ühe commitiga; kontrollib avatud PR-i ise (diff --name-only, kiired kontrollid) enne, kui selle Rahile toob; seis ≤8 rida; kuni 3 küsimust; lõpus selge, mis on Rahi käes.",
+      "files": [
+        "docs/koordinatsioon/README.md",
+        "docs/koordinatsioon/LAHTISED.md",
+        "docs/koordinatsioon/POSTKAST.md"
+      ]
+    }
+  ]
+}

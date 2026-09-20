@@ -6,21 +6,22 @@ Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-o
 
 | Use **Haiku** | Use **Sonnet** (default) | Use **Opus** |
 |---------------|--------------------------|--------------|
-| File reads & grep lookups | Feature development | Security-sensitive code |
-| Codebase exploration | Bug fixes (routine) | Hard debugging (> 2 Sonnet attempts) |
+| File reads & grep lookups | Pre-specified mechanical changes (rename, text, config, docs move) | Feature development: anything that adds or changes behaviour |
+| Codebase exploration | Bug fixes with known cause + existing test | Bug fixes where the cause must be found |
 | Translation string checks | UI component implementation | Architecture decisions |
-| Summarizing logs/output | Code refactoring | Writing/reviewing implementation plans |
+| Summarizing logs/output | Running an existing measurement script | Code refactoring, writing/reviewing implementation plans |
 | Simple Q&A about existing code | Writing i18n strings | Complex multi-system reasoning |
 | Formatting & linting checks | Most day-to-day coding | Anything where error cost is high |
 | Regex / search patterns | PR descriptions & commit messages | Ambiguous tasks with high stakes |
+| Grading against a checklist | Protocol / docs housekeeping | Reviewing large PRs, architecture, security |
 
 ## Rules
 
 1. **Default to Sonnet.** If a task isn't clearly Haiku or Opus, use Sonnet.
 2. **Haiku for subagents doing research.** Explore, search, summarize → `model: "haiku"`.
-3. **Sonnet for subagents doing implementation.** Write code, refactor → `model: "sonnet"`.
+3. **Subagents doing implementation: Sonnet only when the change can be described in one sentence with no design decision** (rename, text, config, docs move, known one-line fix with an existing test) → `model: "sonnet"`. **Anything that adds or changes behaviour** (feature, report, import, refactor, bug with unknown cause) → `model: "opus"`. Measured in the `koordinaator` skill (2026-09-06): "machine-verifiable → Sonnet" sent features to Sonnet; a failed proof costs a second round, which is dearer than Opus once.
 4. **Opus for subagents doing security or planning.** Security review, plan writing, hard debugging → `model: "opus"`.
-5. **Escalate to Opus if Sonnet fails twice** on the same problem. Don't retry the same model indefinitely.
+5. **Escalate to Opus if Sonnet fails once** on a proof (tests, diff, build). Don't retry the same model indefinitely; write down which model passed so the next choice is measured, not guessed.
 6. **Never use Opus for lookups.** Reading files, grepping, summarizing is always Haiku or Sonnet.
 
 ## Model IDs
@@ -29,9 +30,10 @@ Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-o
 |-------|----|----------|
 | Haiku 4.5 | `claude-haiku-4-5-20251001` | Research, lookups, fast agents |
 | Sonnet 5 | `claude-sonnet-5` | Everyday coding, features, fixes |
-| Opus 4.8 | `claude-opus-4-8` | Security, planning, hard problems |
+| Opus 5 | `claude-opus-5` | Security, planning, hard problems |
+| Fable 5.1 | `claude-fable-5-1` | Specs, plans, plan audits, architecture |
 
-The current frontier families are Claude 5 (`claude-sonnet-5`, `claude-fable-5`),
+The current frontier families are Claude 5 (`claude-sonnet-5`, `claude-fable-5-1`),
 Opus 4.8, and Haiku 4.5. When building anything against the Claude API, default
 to the latest and most capable model rather than pinning an old snapshot.
 
