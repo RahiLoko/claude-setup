@@ -64,6 +64,22 @@ junction into this repo, so editing the live skill edits the repo — commit and
 push from here. Other machines get plain copies via `install.sh` and should not
 edit locally.
 
+## skills-lock.json
+
+A manifest of 18 skills pulled straight from GitHub (not through `install.sh`),
+each pinned by content hash. Sources: `emilkowalski/skills` (13),
+`mattpocock/skills` (2), `leonxlnx/taste-skill`, `heygen-com/hyperframes`,
+`vercel-labs/agent-skills`.
+
+Snapshotted from the ybn40 working tree on 20.09.2026, where it was untracked
+— the manifest that says how to restore those skills was itself the only copy.
+
+**Known gap:** the lock pulls `grill-me`, whose SKILL.md is only an entry point
+— it calls a second skill named `grilling`, which the lock does not list and
+which is not installed. `/grill-me` therefore does nothing useful right now.
+Both come from the `mattpocock-skills` plugin, so the fix is
+`/plugin install mattpocock-skills` rather than vendoring half of it here.
+
 ## Adding new custom skills
 
 ```bash
