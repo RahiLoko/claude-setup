@@ -28,6 +28,7 @@ Then restart Claude Code and run the `/plugin install` commands shown at the end
 | `email-html-mjml` | framix-team/skill-email-html-mjml | Responsive HTML emails (requires `npm i -D mjml`) |
 | `new-project` | **custom** | Bootstraps a verified new web project (Next.js + Drizzle/Postgres + Better Auth + Docker) |
 | `resume` | **custom** | Session-start briefing from RESUME.md, plan, memory, git log |
+| `koordinaator` | **custom** | Orchestration protocol: roles, worktree dispatch, proof requirements, work-session prompt contract |
 
 Skills ship supporting files (`reference/`, `scripts/`, `docs/`), and the installer
 copies those alongside `SKILL.md` — a skill installed as a lone `SKILL.md` is a
@@ -47,6 +48,16 @@ skill whose own instructions point at files that don't exist.
 - Design spec + plan live in `skills/new-project/docs/`
 
 **Usage:** Type `/new-project`.
+
+`skills/koordinaator/` — How work is run, not what is built. Roles (owner
+decides, coordinator measures and merges, work session proves), local dispatch
+via `Agent` + `isolation: "worktree"`, and what counts as proof. The substance
+is in `references/`: `toestused.md` (proof per PR type), `sessiooni-mall.md`
+(work-session prompt contract), `mudelid.md`, `liitmine.md`, `oppetunnid.md`.
+
+Until 20.09.2026 this skill existed on one laptop only and nothing had a copy.
+`~/.claude/skills/koordinaator` is now a symlink into this repo, so editing the
+live skill edits the repo — commit and push from here.
 
 **Maintenance note:** on the main dev machine `~/.claude/skills/new-project` is a
 junction into this repo, so editing the live skill edits the repo — commit and
