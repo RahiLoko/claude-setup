@@ -1,6 +1,6 @@
 # Model Selection Guide
 
-Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-of-failure.
+Per token, Haiku costs about 1/40 of Opus, Sonnet half of Opus, and Fable twice Opus (API list prices, November 2026). Match model to task complexity and cost-of-failure.
 
 ## Quick Decision Table
 
@@ -28,13 +28,13 @@ Haiku ≈ 10–20× cheaper than Opus. Match model to task complexity and cost-o
 
 | Model | ID | Best for |
 |-------|----|----------|
-| Haiku 4.5 | `claude-haiku-4-5-20251001` | Research, lookups, fast agents |
-| Sonnet 5 | `claude-sonnet-5` | Everyday coding, features, fixes |
-| Opus 5 | `claude-opus-5` | Security, planning, hard problems |
-| Fable 5.1 | `claude-fable-5-1` | Specs, plans, plan audits, architecture |
+| Haiku 5.5 | `claude-haiku-5-5` | Research, lookups, fast agents |
+| Sonnet 5.5 | `claude-sonnet-5-5` | Everyday coding, features, fixes |
+| Opus 5.5 | `claude-opus-5-5` | Security, planning, hard problems |
+| Fable 5.2 | `claude-fable-5-2` | Specs, plans, plan audits, architecture |
 
-The current frontier families are Claude 5 (`claude-sonnet-5`, `claude-fable-5-1`),
-Opus 4.8, and Haiku 4.5. When building anything against the Claude API, default
+The current family is Claude 5: Fable 5.2, Opus 5.5, Sonnet 5.5 and Haiku 5.5
+(checked 12.11.2026). When building anything against the Claude API, default
 to the latest and most capable model rather than pinning an old snapshot.
 
 ## Where This Is Enforced
