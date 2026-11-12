@@ -198,12 +198,27 @@ case "$(uname -s)" in
     ;;
 esac
 
-if ! command -v python3 &> /dev/null; then
-  warn "python3 not found — cannot register the startup hook automatically"
+# ── Find a Python 3 ──────────────────────────────────────────
+# On Windows the interpreter is usually `python`; `python3` is either
+# missing or a Microsoft Store stub that prints nothing and fails. So
+# each candidate has to prove it is Python 3 instead of being trusted
+# by name. Without this the CLAUDE.md sync below died on `python3:
+# command not found` and `set -e` aborted the install before pruning.
+PYTHON=""
+for candidate in python3 python; do
+  if command -v "$candidate" &> /dev/null \
+     && "$candidate" -c 'import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)' &> /dev/null; then
+    PYTHON="$candidate"
+    break
+  fi
+done
+
+if [ -z "$PYTHON" ]; then
+  warn "Python 3 not found — cannot register the startup hook automatically"
 elif [ -f "$SETTINGS_FILE" ]; then
   # Paths go in as argv, not interpolated into the source: $HOME may
   # contain spaces (and on Windows, backslashes).
-  python3 - "$SETTINGS_FILE" "$HOOK_CMD" <<'PYEOF'
+  "$PYTHON" - "$SETTINGS_FILE" "$HOOK_CMD" <<'PYEOF'
 import json, shutil, sys
 
 settings_file, hook_cmd = sys.argv[1:3]
@@ -256,8 +271,10 @@ if [ ! -f "$SCRIPT_DIR/MODELS.md" ]; then
 elif [ ! -f "$CLAUDE_MD" ]; then
   { echo "$BEGIN_MARK"; cat "$SCRIPT_DIR/MODELS.md"; echo "$END_MARK"; } > "$CLAUDE_MD"
   log "Created ~/.claude/CLAUDE.md with model selection rules"
+elif [ -z "$PYTHON" ]; then
+  warn "Python 3 not found — global CLAUDE.md left untouched, model rules not synced"
 else
-  python3 - "$CLAUDE_MD" "$SCRIPT_DIR/MODELS.md" "$BEGIN_MARK" "$END_MARK" <<'PYEOF'
+  "$PYTHON" - "$CLAUDE_MD" "$SCRIPT_DIR/MODELS.md" "$BEGIN_MARK" "$END_MARK" <<'PYEOF'
 import re, shutil, sys
 
 claude_md, models_md, begin, end = sys.argv[1:5]
@@ -265,8 +282,13 @@ claude_md, models_md, begin, end = sys.argv[1:5]
 with open(models_md, encoding="utf-8") as f:
     block = begin + "\n" + f.read().strip() + "\n" + end
 
-with open(claude_md, encoding="utf-8") as f:
-    current = f.read()
+# Read without newline translation and remember the file's own line
+# endings. Python on Windows would otherwise write CRLF and turn the
+# whole file over the first time it touched one line.
+with open(claude_md, encoding="utf-8", newline="") as f:
+    raw = f.read()
+eol = "\r\n" if "\r\n" in raw else "\n"
+current = raw.replace("\r\n", "\n")
 
 # Greedy: the block runs from the FIRST begin marker to the LAST end
 # marker. Non-greedy would stop at any marker quoted inside the block
@@ -283,7 +305,7 @@ if updated != current:
     # run would overwrite the pristine pre-install snapshot with an
     # already-modified copy on the second run.
     shutil.copyfile(claude_md, claude_md + ".bak")
-    with open(claude_md, "w", encoding="utf-8") as f:
+    with open(claude_md, "w", encoding="utf-8", newline=eol) as f:
         f.write(updated)
     print("  model rules block updated (backup: CLAUDE.md.bak)")
 else:
