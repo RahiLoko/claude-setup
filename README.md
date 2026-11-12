@@ -98,6 +98,36 @@ See [`MODELS.md`](MODELS.md) for the full model selection guide (Haiku / Sonnet 
 
 The install script copies `MODELS.md` to `~/.claude/CLAUDE.md` so these rules are loaded globally in every Claude Code session.
 
+## Cloud sessions
+
+A Claude Code cloud session starts from a fresh clone of one repo, so nothing in
+this machine's `~/.claude` reaches it. `cloud/setup.sh` puts the part that is
+actually used into the cloud machine:
+
+| What | From |
+|------|------|
+| Global rules (`~/.claude/CLAUDE.md`) | `cloud/CLAUDE.md` (the Autonomy rules) + `MODELS.md` |
+| `resume`, `new-project` | this repo |
+| `impeccable`, `emil-design-eng`, `owasp-security` | their own repos, each pinned to a commit |
+
+In the cloud environment's settings, paste this one line into **Setup script**:
+
+```bash
+git clone --depth 1 https://github.com/RahiLoko/claude-setup /tmp/claude-setup && bash /tmp/claude-setup/cloud/setup.sh
+```
+
+It never stops the environment from starting: a step that fails is reported and
+skipped, and the script always exits 0. An existing `~/.claude/CLAUDE.md` is
+left alone.
+
+Not installed there, on purpose: skills and plugins that come from the claude.ai
+account (koordinaator, pm-coworker, Superpowers …) load in cloud sessions by
+themselves, and the dev-site comment and Better Design rules depend on tools a
+cloud machine does not have.
+
+`cloud/CLAUDE.md` is a copy of the Autonomy section of the live global rules.
+When that section changes, copy it here again and commit.
+
 ## Updating skills
 
 ```bash
